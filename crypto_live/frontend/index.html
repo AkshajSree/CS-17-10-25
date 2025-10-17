@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>CrypticShift — Live Crypto Tracker</title>
+  <style>
+    :root { --bg:#0b0f14; --card:#0f1620; --text:#e6edf3; --muted:#9fb0c3; --brand:#4cc9f0; --border:#1f2a3a; }
+    * { box-sizing: border-box; font-family: system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial, sans-serif; }
+    body { margin:0; background: var(--bg); color: var(--text); }
+    .container { max-width: 900px; margin: 0 auto; padding: 20px; }
+    header { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; }
+    h1 { font-size: 1.4rem; margin:0; }
+    table { width:100%; border-collapse: collapse; margin-top: 15px; }
+    th, td { text-align:left; padding:10px; border-bottom:1px solid var(--border); }
+    th { color: var(--muted); }
+    .green { color:#34d399; } .red { color:#f87171; }
+    button { padding:8px 14px; background: var(--brand); color:#02242b; border:none; border-radius:8px; font-weight:700; cursor:pointer; }
+    .muted { color: var(--muted); }
+    footer { text-align:center; padding:20px; color:var(--muted); }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>CrypticShift — Live Crypto Tracker</h1>
+      <button id="refreshBtn">Refresh</button>
+    </header>
+    <div id="updated" class="muted">Loading data...</div>
+    <table id="cryptoTable">
+      <thead>
+        <tr>
+          <th>Symbol</th><th>Name</th><th>Price (USD)</th><th>24h %</th><th>Market Cap</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <div id="error" class="muted" style="display:none;margin-top:8px;">Failed to load data.</div>
+    <footer>Data from CoinMarketCap (educational use). Auto-refresh every 60s.</footer>
+  </div>
+
+  <script>
+    const $ = s => document.querySelector(s);
+
+    function fmtNum(n){
+      if(!n || isNaN(n)) return "—";
+      return Number(n).toLocaleString(undefined,{maximumFractionDigits:6});
+    }
+
+    function fmtPct(n){
+      if(!n || isNaN(n)) return "—";
+      const cls = n >= 0 ? "green":"red";
+      return `<span class="${cls}">${n.toFixed(2)}%</span>`;
+    }
+
+    async function loadData(){
+      try {
+        const res = await fetch("/tickers/latest");
+        const json = await res.json();
+        const data = json.data || [];
+        const tbody = $("#cryptoTable tbody");
+        tbody.innerHTML = "";
+        if (!data.length){ $("#error").style.display = "block"; return; }
+        $("#error").style.display = "none";
+        data.forEach(row=>{
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${row.symbol}</td>
+            <td>${row.name}</td>
+            <td>$${fmtNum(row.price)}</td>
+            <td>${fmtPct(row.change_24h)}</td>
+            <td>$${fmtNum(row.market_cap)}</td>`;
+          tbody.appendChild(tr);
+        });
+        $("#updated").textContent = "Last updated: " + new Date().toLocaleTimeString();
+      } catch(e){
+        $("#error").style.display = "block";
+      }
+    }
+
+    $("#refreshBtn").addEventListener("click", loadData);
+    loadData();
+    setInterval(loadData, 60000);
+  </script>
+</body>
+</html>
