@@ -1,16 +1,24 @@
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware  # Add CORS support
 
-# Import the robust fetch_prices_with_retry function from prices_html
-from backend import prices_html
+from crypto_live.backend import prices_html
 
 app = FastAPI()
+
+# CORS middleware for allowing connections from frontend server
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allow any origin during local development
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.get("/")
 def root():
     try:
-        prices = prices_html.fetch_prices_with_retry()  # Fetch latest prices with retry logic
-        # Convert datetime objects to ISO format string for JSON serialization
+        prices = prices_html.fetch_prices_with_retry()
         json_prices = [
             {
                 "symbol": coin["symbol"],
@@ -21,5 +29,4 @@ def root():
         ]
         return JSONResponse(content={"prices": json_prices})
     except Exception as e:
-        # Return HTTP 500 with error details
         return JSONResponse(status_code=500, content={"error": str(e)})

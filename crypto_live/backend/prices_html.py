@@ -7,7 +7,7 @@ def fetch_prices_with_retry(max_retries=3):
     for attempt in range(max_retries):
         try:
             r = requests.get(url, timeout=10)
-            r.raise_for_status()  # Raises HTTPError for bad responses
+            r.raise_for_status()
             data = r.json()
             print("DEBUG: Raw API response:", data)
 
@@ -30,7 +30,7 @@ def fetch_prices_with_retry(max_retries=3):
                 raise ValueError("Missing expected coin data keys.")
         except Exception as e:
             print(f"Fetch attempt {attempt+1} failed: {e}")
-            time.sleep(2 ** attempt)  # Exponential backoff
+            time.sleep(2 ** attempt)
     raise Exception("Failed to fetch prices after maximum retries.")
 
 if __name__ == "__main__":
